@@ -1,70 +1,75 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
+from selenium.common.exceptions import NoSuchElementException
 import time
 import csv
-
-
-# 1. Web scraper for ejobs.ro
+import subprocess
+import os
+import sys
 
 driver = webdriver.Chrome()
+base_url = "https://www.ejobs.ro/locuri-de-munca/developer/pagina"
+page_num = 1
 
-jobs_listing_url = "https://www.ejobs.ro/locuri-de-munca/python/pagina1"
+with open('job_listings.csv', mode='w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Job Title', 'Link'])
 
-driver.get(jobs_listing_url)
+    while True:
+        jobs_listing_url = f"{base_url}{page_num}"
+        driver.get(jobs_listing_url)
 
-start = time.time()
+        # If it's the first page, click the "accept cookies" button
+        if page_num == 1:
+            try:
+                button_to_accept_cookies = driver.find_element(By.CLASS_NAME,
+                                                               "CookiesPopup__AcceptButton.eButton.eButton--Primary")
+                button_to_accept_cookies.click()
+            except NoSuchElementException:
+                print("Accept cookies button not found.")
 
-# Click the "accept cookies" button
+        start = time.time()
+        initialScroll = 0
+        finalScroll = 1000
 
-button_to_accept_cookies = driver.find_element(By.CLASS_NAME, "CookiesPopup__AcceptButton.eButton.eButton--Primary")
+        while True:
+            driver.execute_script(f"window.scrollTo({initialScroll}, {finalScroll})")
+            initialScroll = finalScroll
+            finalScroll += 1000
+            time.sleep(0.2)
 
-# print(button_to_accept_cookies)
+            if time.time() - start > 3:
+                break
 
-button_to_accept_cookies.click()
+        src = driver.page_source
+        job_elements = driver.find_elements(By.CSS_SELECTOR, "h2.JCContentMiddle__Title a")
 
-# will be used in the while loop
-initialScroll = 0
-finalScroll = 1000
+        for job_element in job_elements:
+            job_title = job_element.get_attribute("textContent").strip()
+            # if 'junior' in job_title.lower() and 'developer' in job_title.lower():
+            if 'python' in job_title.lower():
+                job_link = job_element.get_attribute("href")
+                writer.writerow([job_title, job_link])
+                writer.writerow([])
 
-while True:
-    driver.execute_script(f"window.scrollTo({initialScroll},{finalScroll})")
-# this command scrolls the window starting from
-# the pixel value stored in the initialScroll
-# variable to the pixel value stored at the
-# finalScroll variable
-    initialScroll = finalScroll
-    finalScroll += 1000
+        # Try to go to the next page
+        try:
+            next_button = driver.find_element(By.CSS_SELECTOR, ".JLPButton--Next")
+            next_button.click()
+            page_num += 1
+        except NoSuchElementException:
+            print("No more pages. Exiting.")
+            break
 
-# we will stop the script for 3 seconds so that
-# the data can load
-    time.sleep(1)
-# You can change it as per your needs and internet speed
+driver.quit()
 
-    end = time.time()
-
-# We will scroll for 20 seconds.
-# You can change it as per your needs and internet speed
-    if round(end - start) > 20:
-        break
-
-
-
-# Extracting the data from the page and parsing it
-
-src = driver.page_source
-
-soup = BeautifulSoup(src, 'lxml')
-
-job_elements = driver.find_elements(By.CSS_SELECTOR, "h2.JCContentMiddle__Title a")
-
-# print(job_elements)
-
-for job_element in job_elements:
-    # print(type((job_element.text)))
-    if 'python' in job_element.get_attribute("textContent").lower():
-        job_link = job_element.get_attribute("href")
-        print(f'Link for this job: {job_link}')
-    else:
-        # print('This is not a python job')
-        pass
+try:
+    if os.name == 'nt':  # Windows
+        subprocess.run(['start', 'job_listings.csv'], shell=True, check=True)
+    elif os.name == 'posix':  # macOS, Linux, and Unix
+        if sys.platform == 'darwin':  # macOS
+            subprocess.run(['open', 'job_listings.csv'], check=True)
+        else:  # Linux
+            subprocess.run(['xdg-open', 'job_listings.csv'], check=True)
+except subprocess.CalledProcessError as e:
+    print("Could not open the CSV file automatically. Please open it manually.")
