@@ -30,9 +30,9 @@ def main():
         writer.writerow(['Job Title', 'Link'])
 
         # Scrape eJobs.ro
-        # ejobs_listings = scrape_ejobs(driver, 'python')
-        # for title, link in ejobs_listings:
-        #     writer.writerow([title, link])
+        ejobs_listings = scrape_ejobs(driver, 'python')
+        for title, link in ejobs_listings:
+            writer.writerow([title, link])
 
         # Scrape BestJobs.ro
         bestjobs_listings = scrape_bestjobs(driver, 'python')
@@ -40,9 +40,9 @@ def main():
             writer.writerow([title, link])
 
         # Scrape Hipo.ro
-        # hipo_listings = scrape_hipo(driver, 'python')
-        # for title, link in hipo_listings:
-        #     writer.writerow([title, link])
+        hipo_listings = scrape_hipo(driver, 'python')
+        for title, link in hipo_listings:
+            writer.writerow([title, link])
 
     driver.quit()
     open_csv_file('job_listings.csv')
