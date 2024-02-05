@@ -32,7 +32,7 @@ def scrape_ejobs(driver, keyword: str):
         while True:
             driver.execute_script(f"window.scrollTo({initialScroll}, {finalScroll})")
             initialScroll = finalScroll
-            finalScroll += 1000
+            finalScroll += 50
             if time.time() - start > 3:
                 break
 
@@ -49,7 +49,7 @@ def scrape_ejobs(driver, keyword: str):
             next_button.click()
             page_num += 1
         except NoSuchElementException:
-            print("No more pages. Exiting.")
+            print("Ejobs.ro scraper has finished running.")
             break
 
     return job_listings
