@@ -82,6 +82,7 @@ import subprocess
 import os
 import sys
 from scrapers.ejobs_scraper import scrape_ejobs
+from scrapers.bestjobs_scraper import scrape_bestjobs
 
 
 def open_csv_file(path):
@@ -104,8 +105,14 @@ def main():
         writer = csv.writer(file)
         writer.writerow(['Job Title', 'Link'])
 
-        job_listings = scrape_ejobs(driver, 'python')
-        for title, link in job_listings:
+        # Scrape eJobs.ro
+        ejobs_listings = scrape_ejobs(driver, 'python')
+        for title, link in ejobs_listings:
+            writer.writerow([title, link])
+
+        # Scrape BestJobs.ro
+        bestjobs_listings = scrape_bestjobs(driver, 'python')
+        for title, link in bestjobs_listings:
             writer.writerow([title, link])
 
     driver.quit()
